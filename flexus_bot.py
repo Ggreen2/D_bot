@@ -24,12 +24,34 @@ bot = commands.Bot(command_prefix='?', intents=intents)
 # classes & variables
 
 # A list to store the names of users who have clicked "Join"
-flex_list = []
-ih_player_list = []
+player_list_main = []
 
 '''
 User's name on the server - interaction.user.display_name
 '''
+
+
+def check_if_exists_main(player) -> bool:
+    exists = False
+    for item in player_list_main:
+        if item.get_user() == player.get_user():
+            exists = True
+    return exists
+
+
+def get_index_main(player) -> int:
+    index = 0
+    for item in player_list_main:
+        if item.get_user() == player.get_user():
+            return index
+        else:
+            index += 1
+    return -1
+
+
+def add_player_main(player):
+    if not check_if_exists_main(player):
+        player_list_main.append(player)
 
 
 class Player:
@@ -44,6 +66,12 @@ class Player:
 
     def get_name(self):
         return self.name
+
+    def get_role(self):
+        return self.role
+
+    def set_role(self, new_role):
+        self.role = new_role
 
     def check_if_exists(self, user: str) -> bool:
         exists = False
@@ -160,131 +188,139 @@ class EmbedView(View):
         await interaction.response.edit_message(embed=embed, view=self)
 
 
+'''
+TODO:
+- Need to go through all buttons and functions in both embedflex and embedinhouse to change that they first check if player exists in main player
+list, if not then add them (obv), and then call their role from there. both embeds will have a unique list JUST FOR THAT INSTANCE,
+essentially where you call player list for them
+'''
+
+
 class EmbedFlex(View):
     def __init__(self):
-        super().__init__()
-        self.player_list = []
-        self.role_list = []
-        self.name_list = []
-        self.player_count = len(self.player_list)
+        super().__init__(timeout=None)
+        self.player_list_flex = []
+
+    def check_if_exists_flex(self, player) -> bool:
+        exists = False
+        for item in self.player_list_flex:
+            if item.get_user() == player.get_user():
+                exists = True
+        return exists
+
+    def get_index_flex(self, player) -> int:
+        index = 0
+        for item in self.player_list_flex:
+            if item.get_user() == player.get_user():
+                return index
+            else:
+                index += 1
+        return -1
 
     @discord.ui.button(label="Top", style=discord.ButtonStyle.success, custom_id="top_role_flex")
     async def top_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        new_role = 'Top Laner'
-        user = interaction.user.name
-        if user not in self.player_list:
-            self.player_list.append(user)
-            self.role_list.append(new_role)
-            await interaction.response.send_message("You were given the role Top", ephemeral=True)
+        new_role = "Top"
+        new_player = Player(interaction.user.name, interaction.user.display_name, new_role)
+        if not check_if_exists_main(new_player):
+            add_player_main(new_player)
+        player_list_main[get_index_main(new_player)].set_role(new_role)
+        if not self.check_if_exists_flex(new_player):
+            self.player_list_flex.append(new_player)
+            await interaction.response.send_message("You were given the role Top lane", ephemeral=True)
         else:
-            index = self.player_list.index(user)
-            self.role_list[index] = new_role
-            await interaction.response.send_message("Your role has been switched to Top", ephemeral=True)
-        name = interaction.user.display_name
-        if name not in self.name_list:
-            self.name_list.append(name)
+            self.player_list_flex[self.get_index_flex(new_player)].set_role(new_role)
+            await interaction.response.send_message("Your role has been switched to Top lane", ephemeral=True)
         await self.update_embed(interaction)
 
     @discord.ui.button(label="Jungle", style=discord.ButtonStyle.success, custom_id="jng_role_flex")
     async def jng_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        new_role = 'Jungler'
-        user = interaction.user.name
-        if user not in self.player_list:
-            self.player_list.append(user)
-            self.role_list.append(new_role)
-            await interaction.response.send_message("You were given the role Jungle", ephemeral=True)
+        new_role = "Jung"
+        new_player = Player(interaction.user.name, interaction.user.display_name, new_role)
+        if not check_if_exists_main(new_player):
+            add_player_main(new_player)
+        player_list_main[get_index_main(new_player)].set_role(new_role)
+        if not self.check_if_exists_flex(new_player):
+            self.player_list_flex.append(new_player)
+            await interaction.response.send_message("You were given the role Jungler", ephemeral=True)
         else:
-            index = self.player_list.index(user)
-            self.role_list[index] = new_role
-            await interaction.response.send_message("Your role has been switched to Jungle", ephemeral=True)
-        name = interaction.user.display_name
-        if name not in self.name_list:
-            self.name_list.append(name)
+            self.player_list_flex[self.get_index_flex(new_player)].set_role(new_role)
+            await interaction.response.send_message("Your role has been switched to Jungler", ephemeral=True)
         await self.update_embed(interaction)
 
     @discord.ui.button(label="Middle", style=discord.ButtonStyle.success, custom_id="mid_role_flex")
     async def mid_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        new_role = 'Mid Laner'
-        user = interaction.user.name
-        if user not in self.player_list:
-            self.player_list.append(user)
-            self.role_list.append(new_role)
-            await interaction.response.send_message("You were given the role Middle", ephemeral=True)
+        new_role = "Mid"
+        new_player = Player(interaction.user.name, interaction.user.display_name, new_role)
+        if not check_if_exists_main(new_player):
+            add_player_main(new_player)
+        player_list_main[get_index_main(new_player)].set_role(new_role)
+        if not self.check_if_exists_flex(new_player):
+            self.player_list_flex.append(new_player)
+            await interaction.response.send_message("You were given the role Mid Laner", ephemeral=True)
         else:
-            index = self.player_list.index(user)
-            self.role_list[index] = new_role
-            await interaction.response.send_message("Your role has been switched to Middle", ephemeral=True)
-        name = interaction.user.display_name
-        if name not in self.name_list:
-            self.name_list.append(name)
+            self.player_list_flex[self.get_index_flex(new_player)].set_role(new_role)
+            await interaction.response.send_message("Your role has been switched to Mid Laner", ephemeral=True)
         await self.update_embed(interaction)
 
     @discord.ui.button(label="Bottom", style=discord.ButtonStyle.success, custom_id="bot_role_flex")
     async def bot_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        new_role = 'Bot Laner'
-        user = interaction.user.name
-        if user not in self.player_list:
-            self.player_list.append(user)
-            self.role_list.append(new_role)
-            await interaction.response.send_message("You were given the role Bottom", ephemeral=True)
+        new_role = "Bot"
+        new_player = Player(interaction.user.name, interaction.user.display_name, new_role)
+        if not check_if_exists_main(new_player):
+            add_player_main(new_player)
+        player_list_main[get_index_main(new_player)].set_role(new_role)
+        if not self.check_if_exists_flex(new_player):
+            self.player_list_flex.append(new_player)
+            await interaction.response.send_message("You were given the role Bot Laner", ephemeral=True)
         else:
-            index = self.player_list.index(user)
-            self.role_list[index] = new_role
-            await interaction.response.send_message("Your role has been switched to Bottom", ephemeral=True)
-        name = interaction.user.display_name
-        if name not in self.name_list:
-            self.name_list.append(name)
+            self.player_list_flex[self.get_index_flex(new_player)].set_role(new_role)
+            await interaction.response.send_message("Your role has been switched to Bot Laner", ephemeral=True)
         await self.update_embed(interaction)
 
     @discord.ui.button(label="Support", style=discord.ButtonStyle.success, custom_id="sup_role_flex")
     async def sup_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        new_role = 'Support'
-        user = interaction.user.name
-        if user not in self.player_list:
-            self.player_list.append(user)
-            self.role_list.append(new_role)
+        new_role = "Sup"
+        new_player = Player(interaction.user.name, interaction.user.display_name, new_role)
+        if not check_if_exists_main(new_player):
+            add_player_main(new_player)
+        player_list_main[get_index_main(new_player)].set_role(new_role)
+        if not self.check_if_exists_flex(new_player):
+            self.player_list_flex.append(new_player)
             await interaction.response.send_message("You were given the role Support", ephemeral=True)
         else:
-            index = self.player_list.index(user)
-            self.role_list[index] = new_role
+            self.player_list_flex[self.get_index_flex(new_player)].set_role(new_role)
             await interaction.response.send_message("Your role has been switched to Support", ephemeral=True)
-        name = interaction.user.display_name
-        if name not in self.name_list:
-            self.name_list.append(name)
         await self.update_embed(interaction)
 
     @discord.ui.button(label="Fill", style=discord.ButtonStyle.primary, custom_id="fill_role_flex")
     async def fill_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        new_role = 'Fill'
-        user = interaction.user.name
-        if user not in self.player_list:
-            self.player_list.append(user)
-            self.role_list.append(new_role)
+        new_role = "Fill"
+        new_player = Player(interaction.user.name, interaction.user.display_name, new_role)
+        if not check_if_exists_main(new_player):
+            add_player_main(new_player)
+        player_list_main[get_index_main(new_player)].set_role(new_role)
+        if not self.check_if_exists_flex(new_player):
+            self.player_list_flex.append(new_player)
             await interaction.response.send_message("You were given the role Fill", ephemeral=True)
         else:
-            index = self.player_list.index(user)
-            self.role_list[index] = new_role
+            self.player_list_flex[self.get_index_flex(new_player)].set_role(new_role)
             await interaction.response.send_message("Your role has been switched to Fill", ephemeral=True)
-        name = interaction.user.display_name
-        if name not in self.name_list:
-            self.name_list.append(name)
         await self.update_embed(interaction)
 
     @discord.ui.button(label="Leave Queue", style=discord.ButtonStyle.danger, custom_id="leave_flex")
     async def leave_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        user = interaction.user.name
-        if user not in self.player_list:
+        new_player = Player(interaction.user.name, interaction.user.display_name)
+        if not check_if_exists_main(new_player):
+            add_player_main(new_player)
+        if not self.check_if_exists_flex(new_player):
             await interaction.response.send_message("You were not in the queue", ephemeral=True)
         else:
-            index = self.player_list.index(user)
-            self.player_list.remove(user)
-            del self.role_list[index]
-            del self.name_list[index]
+            del self.player_list_flex[self.get_index_flex(new_player)]
             await interaction.response.send_message("You have been removed from the queue", ephemeral=True)
         await self.update_embed(interaction)
 
     async def update_embed(self, interaction: discord.Interaction):
-        num = len(self.player_list)
+        num = len(self.player_list_flex)
         if num >= 5:
             new_color = discord.Color.green()
         else:
@@ -294,7 +330,7 @@ class EmbedFlex(View):
         else:
             desc = "Players currently waiting to play flex queue with others\n"
             for i in range(num):
-                desc += f"\n- {self.name_list[i]} - {self.role_list[i]}"
+                desc += f"\n- {self.player_list_flex[i].get_name()} - {self.player_list_flex[i].get_role()}"
             desc += "\n\nHave enough players? Join a call!"
         embed = discord.Embed(
             title="Flex Queue",
@@ -306,163 +342,148 @@ class EmbedFlex(View):
 
 class EmbedInhouse(View):
     def __init__(self):
-        super().__init__()
-        self.player_list_main = []
-        self.role_list_main = []
-        self.name_list_main = []
-        self.player_list_b = []
-        self.role_list_b = []
-        self.name_list_b = []
-        self.player_list_r = []
-        self.role_list_r = []
-        self.name_list_r = []
+        super().__init__(timeout=None)
+        self.player_list_inhouse = []
 
-    @discord.ui.button(label="Top", style=discord.ButtonStyle.secondary, custom_id="top_role_ih")
+    def check_if_exists_inhouse(self, player) -> bool:
+        exists = False
+        for item in self.player_list_inhouse:
+            if item.get_user() == player.get_user():
+                exists = True
+        return exists
+
+    def get_index_inhouse(self, player) -> int:
+        index = 0
+        for item in self.player_list_inhouse:
+            if item.get_user() == player.get_user():
+                return index
+            else:
+                index += 1
+        return -1
+
+    @discord.ui.button(label="Top", style=discord.ButtonStyle.secondary, custom_id="top_role_flex")
     async def top_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        new_role = 'Top Laner'
-        user = interaction.user.name
-        if user not in self.player_list_main:
-            self.player_list_main.append(user)
-            self.role_list_main.append(new_role)
-            await interaction.response.send_message("You were given the role Top", ephemeral=True)
+        new_role = "Top"
+        new_player = Player(interaction.user.name, interaction.user.display_name, new_role)
+        if not check_if_exists_main(new_player):
+            add_player_main(new_player)
+        player_list_main[get_index_main(new_player)].set_role(new_role)
+        if not self.check_if_exists_inhouse(new_player):
+            self.player_list_inhouse.append(new_player)
+            await interaction.response.send_message("You were given the role Top lane", ephemeral=True)
         else:
-            index = self.player_list_main.index(user)
-            self.role_list_main[index] = new_role
-            await interaction.response.send_message("Your role has been switched to Top", ephemeral=True)
-        name = interaction.user.display_name
-        if name not in self.name_list_main:
-            self.name_list_main.append(name)
+            self.player_list_inhouse[self.get_index_inhouse(new_player)].set_role(new_role)
+            await interaction.response.send_message("Your role has been switched to Top lane", ephemeral=True)
         await self.update_embed(interaction)
 
-    @discord.ui.button(label="Jungle", style=discord.ButtonStyle.secondary, custom_id="jng_role_ih")
+    @discord.ui.button(label="Jungle", style=discord.ButtonStyle.secondary, custom_id="jng_role_flex")
     async def jng_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        new_role = 'Jungler'
-        user = interaction.user.name
-        if user not in self.player_list_main:
-            self.player_list_main.append(user)
-            self.role_list_main.append(new_role)
-            await interaction.response.send_message("You were given the role Jungle", ephemeral=True)
+        new_role = "Jung"
+        new_player = Player(interaction.user.name, interaction.user.display_name, new_role)
+        if not check_if_exists_main(new_player):
+            add_player_main(new_player)
+        player_list_main[get_index_main(new_player)].set_role(new_role)
+        if not self.check_if_exists_inhouse(new_player):
+            self.player_list_inhouse.append(new_player)
+            await interaction.response.send_message("You were given the role Jungler", ephemeral=True)
         else:
-            index = self.player_list_main.index(user)
-            self.role_list_main[index] = new_role
-            await interaction.response.send_message("Your role has been switched to Jungle", ephemeral=True)
-        name = interaction.user.display_name
-        if name not in self.name_list_main:
-            self.name_list_main.append(name)
+            self.player_list_inhouse[self.get_index_inhouse(new_player)].set_role(new_role)
+            await interaction.response.send_message("Your role has been switched to Jungler", ephemeral=True)
         await self.update_embed(interaction)
 
-    @discord.ui.button(label="Middle", style=discord.ButtonStyle.secondary, custom_id="mid_role_ih")
+    @discord.ui.button(label="Middle", style=discord.ButtonStyle.secondary, custom_id="mid_role_flex")
     async def mid_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        new_role = 'Mid Laner'
-        user = interaction.user.name
-        if user not in self.player_list_main:
-            self.player_list_main.append(user)
-            self.role_list_main.append(new_role)
-            await interaction.response.send_message("You were given the role Middle", ephemeral=True)
+        new_role = "Mid"
+        new_player = Player(interaction.user.name, interaction.user.display_name, new_role)
+        if not check_if_exists_main(new_player):
+            add_player_main(new_player)
+        player_list_main[get_index_main(new_player)].set_role(new_role)
+        if not self.check_if_exists_inhouse(new_player):
+            self.player_list_inhouse.append(new_player)
+            await interaction.response.send_message("You were given the role Mid Laner", ephemeral=True)
         else:
-            index = self.player_list_main.index(user)
-            self.role_list_main[index] = new_role
-            await interaction.response.send_message("Your role has been switched to Middle", ephemeral=True)
-        name = interaction.user.display_name
-        if name not in self.name_list_main:
-            self.name_list_main.append(name)
+            self.player_list_inhouse[self.get_index_inhouse(new_player)].set_role(new_role)
+            await interaction.response.send_message("Your role has been switched to Mid Laner", ephemeral=True)
         await self.update_embed(interaction)
 
-    @discord.ui.button(label="Bottom", style=discord.ButtonStyle.secondary, custom_id="bot_role_ih")
+    @discord.ui.button(label="Bottom", style=discord.ButtonStyle.secondary, custom_id="bot_role_flex")
     async def bot_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        new_role = 'Bot Laner'
-        user = interaction.user.name
-        if user not in self.player_list_main:
-            self.player_list_main.append(user)
-            self.role_list_main.append(new_role)
-            await interaction.response.send_message("You were given the role Bottom", ephemeral=True)
+        new_role = "Bot"
+        new_player = Player(interaction.user.name, interaction.user.display_name, new_role)
+        if not check_if_exists_main(new_player):
+            add_player_main(new_player)
+        player_list_main[get_index_main(new_player)].set_role(new_role)
+        if not self.check_if_exists_inhouse(new_player):
+            self.player_list_inhouse.append(new_player)
+            await interaction.response.send_message("You were given the role Bot Laner", ephemeral=True)
         else:
-            index = self.player_list_main.index(user)
-            self.role_list_main[index] = new_role
-            await interaction.response.send_message("Your role has been switched to Bottom", ephemeral=True)
-        name = interaction.user.display_name
-        if name not in self.name_list_main:
-            self.name_list_main.append(name)
+            self.player_list_inhouse[self.get_index_inhouse(new_player)].set_role(new_role)
+            await interaction.response.send_message("Your role has been switched to Bot Laner", ephemeral=True)
         await self.update_embed(interaction)
 
-    @discord.ui.button(label="Support", style=discord.ButtonStyle.secondary, custom_id="sup_role_ih")
+    @discord.ui.button(label="Support", style=discord.ButtonStyle.secondary, custom_id="sup_role_flex")
     async def sup_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        new_role = 'Support'
-        user = interaction.user.name
-        if user not in self.player_list_main:
-            self.player_list_main.append(user)
-            self.role_list_main.append(new_role)
+        new_role = "Sup"
+        new_player = Player(interaction.user.name, interaction.user.display_name, new_role)
+        if not check_if_exists_main(new_player):
+            add_player_main(new_player)
+        player_list_main[get_index_main(new_player)].set_role(new_role)
+        if not self.check_if_exists_inhouse(new_player):
+            self.player_list_inhouse.append(new_player)
             await interaction.response.send_message("You were given the role Support", ephemeral=True)
         else:
-            index = self.player_list_main.index(user)
-            self.role_list_main[index] = new_role
+            self.player_list_inhouse[self.get_index_inhouse(new_player)].set_role(new_role)
             await interaction.response.send_message("Your role has been switched to Support", ephemeral=True)
-        name = interaction.user.display_name
-        if name not in self.name_list_main:
-            self.name_list_main.append(name)
         await self.update_embed(interaction)
 
-    @discord.ui.button(label="Fill", style=discord.ButtonStyle.secondary, custom_id="fill_role_ih")
+    @discord.ui.button(label="Fill", style=discord.ButtonStyle.primary, custom_id="fill_role_flex")
     async def fill_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        new_role = 'Fill'
-        user = interaction.user.name
-        if user not in self.player_list_main:
-            self.player_list_main.append(user)
-            self.role_list_main.append(new_role)
+        new_role = "Fill"
+        new_player = Player(interaction.user.name, interaction.user.display_name, new_role)
+        if not check_if_exists_main(new_player):
+            add_player_main(new_player)
+        player_list_main[get_index_main(new_player)].set_role(new_role)
+        if not self.check_if_exists_inhouse(new_player):
+            self.player_list_inhouse.append(new_player)
             await interaction.response.send_message("You were given the role Fill", ephemeral=True)
         else:
-            index = self.player_list_main.index(user)
-            self.role_list_main[index] = new_role
+            self.player_list_inhouse[self.get_index_inhouse(new_player)].set_role(new_role)
             await interaction.response.send_message("Your role has been switched to Fill", ephemeral=True)
-        name = interaction.user.display_name
-        if name not in self.name_list_main:
-            self.name_list_main.append(name)
         await self.update_embed(interaction)
 
-    @discord.ui.button(label="Leave Queue", style=discord.ButtonStyle.danger, custom_id="leave_ih")
+    @discord.ui.button(label="Leave Queue", style=discord.ButtonStyle.danger, custom_id="leave_flex")
     async def leave_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        user = interaction.user.name
-        if user not in self.player_list_main:
+        new_player = Player(interaction.user.name, interaction.user.display_name)
+        if not check_if_exists_main(new_player):
+            add_player_main(new_player)
+        if not self.check_if_exists_inhouse(new_player):
             await interaction.response.send_message("You were not in the queue", ephemeral=True)
         else:
-            index = self.player_list_main.index(user)
-            self.player_list_main.remove(user)
-            del self.role_list_main[index]
-            del self.name_list_main[index]
+            del self.player_list_inhouse[self.get_index_inhouse(new_player)]
             await interaction.response.send_message("You have been removed from the queue", ephemeral=True)
         await self.update_embed(interaction)
 
     @discord.ui.button(label="Start Match", style=discord.ButtonStyle.success, disabled=True, custom_id="start_ih")
     async def start_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        user = interaction.user.name
-        if user not in self.player_list_main:
-            await interaction.response.send_message("You were not in the queue", ephemeral=True)
-        else:
-            index = self.player_list_main.index(user)
-            self.player_list_main.remove(user)
-            del self.role_list_main[index]
-            del self.name_list_main[index]
-            await interaction.response.send_message("You have been removed from the queue", ephemeral=True)
-        await self.update_embed(interaction)
+        await interaction.response.send_message("Game starting!", ephemeral=True)
 
     async def update_embed(self, interaction: discord.Interaction):
-        num = len(self.player_list_main)
-        if num >= 10:
+        num = len(self.player_list_inhouse)
+        if num >= 1:
             new_color = discord.Color.green()
-            # self.add_item(StartButton(7))
             self.start_button.disabled = False
         else:
             new_color = discord.Color.red()
+            self.start_button.disabled = True
         if num == 0:
             desc = "No players currently"
-            self.start_button.disabled = True
         else:
             desc = "Waiting Room\n"
             for i in range(num):
-                desc += f"\n- {self.name_list_main[i]} - {self.role_list_main[i]}"
+                desc += f"\n- {self.player_list_inhouse[i].get_name()} - {self.player_list_inhouse[i].get_role()}"
             desc += "\n\nHave enough players? Join a call!"
         embed = discord.Embed(
-            title="In-house Match Lobby",
+            title="In-House Match Lobby",
             description=f"{desc}",
             color=new_color
         )
