@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from discord.ui import Button, View
+import json
 import asyncio
 
 """
@@ -24,13 +25,113 @@ bot = commands.Bot(command_prefix='?', intents=intents)
 
 # A list to store the names of users who have clicked "Join"
 flex_list = []
+ih_player_list = []
 
 '''
 User's name on the server - interaction.user.display_name
 '''
 
 
-# basic layout
+class Player:
+    def __init__(self, user: str, name: str, role: str = "Fill"):
+        self.user = user
+        self.name = name
+        self.role = role
+        self.head2head = []
+
+    def get_user(self):
+        return self.user
+
+    def get_name(self):
+        return self.name
+
+    def check_if_exists(self, user: str) -> bool:
+        exists = False
+        for item in self.head2head:
+            if item.get_user() == user:
+                exists = True
+        return exists
+
+    def add_head2head(self, user: str, name: str):
+        if not self.check_if_exists(user):
+            self.head2head.append(HeadToHead(user, name))
+
+    def get_index(self, user) -> int:
+        index = 0
+        for item in self.head2head:
+            if item.get_user() == user:
+                return index
+            else:
+                index += 1
+        return -1
+
+    def get_stats(self, user, name):
+        if self.check_if_exists(user):
+            return_me = f"{name} - {self.head2head[self.get_index(user)].stats()}"
+        else:
+            return_me = f"You have played no games with {name}"
+        return return_me
+
+    def update_head2head(self, user, name, same_team: bool, did_win: bool):
+        if not self.check_if_exists(user):
+            self.add_head2head(user, name)
+        curr_h_2_h = self.head2head[self.get_index(user)]
+        if same_team:
+            if did_win:
+                curr_h_2_h.win_game_with()
+            else:
+                curr_h_2_h.lose_game_with()
+        else:
+            if did_win:
+                curr_h_2_h.win_game_against()
+            else:
+                curr_h_2_h.lose_game_against()
+
+
+class HeadToHead:
+    def __init__(self, user, name):
+        self.user = user
+        self.name = name
+        self.games_with_won = 0.0
+        self.games_with_total = 0.0
+        self.games_against_won = 0.0
+        self.games_against_total = 0.0
+
+    def stats(self):
+        result = ""
+        if self.games_with_total > 0:
+            result += f"{round((self.games_with_won / self.games_with_total), 2)}% winrate while on your team ({self.games_with_won}/{self.games_with_total} games), "
+        else:
+            result += f"You have played no games with {self.name} on your team, "
+        if self.games_against_total > 0:
+            result += f"{round((self.games_against_won / self.games_against_total), 2)}% winrate against them ({self.games_against_won}/{self.games_against_total} games)"
+        else:
+            result += f"You have played no games against {self.name}"
+        return result
+
+    def get_user(self):
+        return self.user
+
+    def get_name(self):
+        return self.name
+
+    def win_game_with(self):
+        self.games_with_total += 1
+        self.games_with_won += 1
+
+    def lose_game_with(self):
+        self.games_with_total += 1
+
+    def win_game_against(self):
+        self.games_against_total += 1
+        self.games_against_won += 1
+
+    def lose_game_against(self):
+        self.games_against_total += 1
+
+        # basic layout
+
+
 class EmbedView(View):
     def __init__(self):
         super().__init__()
@@ -346,7 +447,7 @@ class EmbedInhouse(View):
 
     async def update_embed(self, interaction: discord.Interaction):
         num = len(self.player_list_main)
-        if num >= 1:
+        if num >= 10:
             new_color = discord.Color.green()
             # self.add_item(StartButton(7))
             self.start_button.disabled = False
@@ -401,45 +502,48 @@ async def inhouse(ctx):
     await ctx.send(embed=embed, view=view)
 
 
-class ToggleView(discord.ui.View):
-    def __init__(self):
-        super().__init__()
-        self.first_button_visible = True
-
-        self.first_button = discord.ui.Button(label="Show Second Button", style=discord.ButtonStyle.primary)
-        self.second_button = discord.ui.Button(label="Show First Button", style=discord.ButtonStyle.primary)
-
-        self.first_button.callback = self.first_button_callback
-        self.second_button.callback = self.second_button_callback
-
-        self.add_item(self.first_button)
-        self.add_item(self.second_button)
-        self.update_buttons()
-
-    def update_buttons(self):
-        self.first_button.disabled = not self.first_button_visible
-        self.second_button.disabled = self.first_button_visible
-
-    async def first_button_callback(self, interaction: discord.Interaction):
-        self.first_button_visible = False
-        self.update_buttons()
-        await interaction.response.edit_message(view=self)
-
-    async def second_button_callback(self, interaction: discord.Interaction):
-        self.first_button_visible = True
-        self.update_buttons()
-        await interaction.response.edit_message(view=self)
+@bot.command(name="stats", aliases=["s"],
+             help="gets head to head stats of you compared to another player, if you've played together before")
+async def stats(ctx, member: discord.Member):
+    # Collect the username of the mentioned person
+    mentioned_user = member.mention
+    username = member.name
+    await ctx.send(f'You mentioned {mentioned_user}, whose username is {username}')
 
 
-@bot.command(name="toggle_buttons", help="Displays an embed with toggleable buttons.")
-async def toggle_buttons(ctx):
-    view = ToggleView()
-    embed = discord.Embed(
-        title="Toggle Buttons",
-        description="Click the buttons to toggle their visibility.",
-        color=discord.Color.blue()
-    )
-    await ctx.send(embed=embed, view=view)
+# class EmbedFlex(View):
+#     def init(self):
+#         super().init()
+#         self.player_list = []
+#         self.role_list = []
+#         self.name_list = []
+#         self.player_count = len(self.player_list)
+#         self.data_file = 'flex_data.json'  # JSON file to store data
+#
+#         # Load data from JSON file on initialization
+#         self.load_data()
+#
+#     # Function to save data to JSON file
+#     def save_data(self):
+#         data = {
+#             'player_list': self.player_list,
+#             'role_list': self.role_list,
+#             'name_list': self.name_list
+#         }
+#         with open(self.data_file, 'w') as file:
+#             json.dump(data, file)
+#
+#     # Function to load data from JSON file
+#     def load_data(self):
+#         try:
+#             with open(self.data_file, 'r') as file:
+#                 data = json.load(file)
+#                 self.player_list = data.get('player_list', [])
+#                 self.role_list = data.get('role_list', [])
+#                 self.name_list = data.get('name_list', [])
+#         except FileNotFoundError:
+#             # Handle the case where the file doesn't exist yet
+#             pass
 
 
 # @bot.command()
